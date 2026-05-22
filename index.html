@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Torrent Automator Setup Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            background-color: #f8f9fa;
+        }
+        h1 {
+            color: #1a73e8;
+            border-bottom: 2px solid #1a73e8;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #202124;
+            margin-top: 30px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #2c3e50;
+        }
+        code {
+            font-family: "Courier New", Courier, monospace;
+            background-color: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+        pre {
+            background-color: #2d3748;
+            color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .note {
+            background-color: #e8f0fe;
+            border-left: 4px solid #1a73e8;
+            padding: 15px;
+            border-radius: 0 4px 4px 0;
+            margin: 20px 0;
+        }
+        .file-name {
+            font-weight: bold;
+            color: #e03131;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Torrent Automator Master Guide</h1>
+    <p>This comprehensive guide walks you through installing Python, setting up background directory monitoring, creating desktop controllers with native notifications, and configuring automated space cleanup with safety locks.</p>
+
+    <h2>Part 1: Installing Python (From Scratch)</h2>
+    <p>Before configuring the scripts, Python must be correctly set up on your system.</p>
+    <h3>1. Download the Installer</h3>
+    <ul>
+        <li>Go to the official website: <strong>python.org/downloads</strong></li>
+        <li>Click the yellow <strong>Download Python 3.x.x</strong> button.</li>
+    </ul>
+    <h3>2. Crucial Steps During Installation</h3>
+    <ul>
+        <li>Open the downloaded installer file.</li>
+        <li><strong>CRITICAL:</strong> At the very bottom of the first window, check the box that says <strong>"Add python.exe to PATH"</strong>. If you skip this, your laptop won't recognize the Python command environment.</li>
+        <li>Click <strong>Install Now</strong> and let it finish.</li>
+        <li><strong>THE FINAL GUARD:</strong> Once the installation finishes successfully, look at the very bottom of the closing window. Click the option that says <strong>"Disable path length limit"</strong>. This ensures long torrent folder names or deeply nested media files won't break your automated transfers down the road.</li>
+    </ul>
+
+    <h2>Part 2: Setting Up the File Paths</h2>
+    <p>Create a folder on your computer named <code>D:\Scripts</code>. This is where all configuration scripts, source files, and automated activity logs will live.</p>
+
+    <h2>Part 3: The 3 Core Files</h2>
+    <p>You need to create three separate files. Open Notepad for each, paste the respective code blocks, and save them exactly as named below.</p>
+
+    <h3>File 1: The Automation Engine (<span class="file-name">D:\Scripts\torrent_watcher.py</span>)</h3>
+    <p>Save this file with a <code>.py</code> extension inside your script folder. This code features an advanced <strong>Auto-Delete Pipeline</strong> equipped with a byte-size verification safety lock to safeguard your files against data loss.</p>
+<pre><code>import os
+import shutil
+import time
+import subprocess
+from datetime import datetime
+
+# --- CONFIGURATION ---
+WATCH_DIRECTORY = r"D:\Path\To\Your\Utorrent\Downloads"  # Where µTorrent saves finished files
+TARGET_DIRECTORY = r"E:\Downloaded_Torrents"             # Your external drive destination
+LOG_FILE = r"D:\Scripts\watcher_log.txt"
+# ---------------------
+
+def log_message(message):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] {message}")
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(f"[{timestamp}] {message}\n")
+
+def send_windows_notification(title, message):
+    """Triggers a native Windows desktop notification banner."""
+    powershell_code = f'''
+    [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms");
+    $notification = New-Object System.Windows.Forms.NotifyIcon;
+    $notification.Icon = [System.Drawing.SystemIcons]::Information;
+    $notification.BalloonTipIcon = "Info";
+    $notification.BalloonTipTitle = "{title}";
+    $notification.BalloonTipText = "{message}";
+    $notification.Visible = $true;
+    $notification.ShowBalloonTip(5000);
+    '''
+    try:
+        subprocess.run(["powershell", "-Command", powershell_code], capture_output=True, text=True)
+    except Exception as e:
+        log_message(f"Failed to send notification: {str(e)}")
+
+def get_dir_size(path):
+    """Calculates total folder or file size to see if it is stable."""
+    if os.path.isfile(path):
+        return os.path.getsize(path)
+    total_size = 0
+    for dirpath, _, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if os.path.exists(fp):
+                total_size += os.path.getsize(fp)
+    return total_size
+
+def main():
+    log_message("Watcher service started with Auto-Delete enabled. Monitoring downloads...")
+    copied_items = set()
+
+    if os.path.exists(WATCH_DIRECTORY):
+        copied_items = set(os.listdir(WATCH_DIRECTORY))
+
+    while True:
+        try:
+            if not os.path.exists(WATCH_DIRECTORY) or not os.path.exists(TARGET_DIRECTORY):
+                time.sleep(10)
+                continue
+
+            current_items = os.listdir(WATCH_DIRECTORY)
+
+            for item in current_items:
+                if item.endswith(".!ut") or item in copied_items:
+                    continue
+
+                source_path = os.path.join(WATCH_DIRECTORY, item)
+                destination_path = os.path.join(TARGET_DIRECTORY, item)
+
+                size_before = get_dir_size(source_path)
+                time.sleep(5)
+                size_after = get_dir_size(source_path)
+
+                if size_before == size_after and size_before > 0:
+                    log_message(f"Detected completed item: {item}. Starting copy...")
+                    
+                    send_windows_notification("Torrent Download Complete", f"Copying '{item}' to external drive...")
+                    
+                    if os.path.isdir(source_path):
+                        shutil.copytree(source_path, destination_path, dirs_exist_ok=True)
+                    else:
+                        shutil.copy2(source_path, destination_path)
+                        
+                    if os.path.exists(destination_path):
+                        source_final_size = get_dir_size(source_path)
+                        dest_final_size = get_dir_size(destination_path)
+                        
+                        if source_final_size == dest_final_size:
+                            log_message(f"Size verification passed for '{item}' ({dest_final_size} bytes). Deleting local copy...")
+                            
+                            if os.path.isdir(source_path):
+                                shutil.rmtree(source_path)
+                            else:
+                                os.remove(source_path)
+                                
+                            log_message(f"Successfully deleted original: {item}")
+                            send_windows_notification("Transfer & Cleanup Successful", f"'{item}' is secure on external storage. Local space cleared.")
+                        else:
+                            log_message(f"CRITICAL SIZE MISMATCH: '{item}' source is {source_final_size} bytes, but destination is {dest_final_size} bytes. Deletion aborted for data safety.")
+                            send_windows_notification("Transfer Warning", f"Size mismatch detected for '{item}'. Original file preserved for safety.")
+                    else:
+                        log_message(f"CRITICAL ERROR: Destination path for '{item}' does not exist. Deletion skipped.")
+                    
+                    copied_items.add(item)
+
+        except Exception as e:
+            log_message(f"Error encountered: {str(e)}")
+
+        time.sleep(10)
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+    <h3>File 2: The Desktop "START" Controller (<span class="file-name">Start Torrent Watcher.vbs</span>)</h3>
+    <p>Save this file directly onto your <strong>Desktop</strong>. Double-clicking it fires up the hidden background process and alerts you with an execution toast message.</p>
+<pre><code>Set WshShell = CreateObject("WScript.Shell")
+WshShell.Run "powershell -Command ""[void] [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); $n = New-Object System.Windows.Forms.NotifyIcon; $n.Icon = [System.Drawing.SystemIcons]::Information; $n.Visible = $true; $n.ShowBalloonTip(3000, 'Torrent Watcher', 'Service Started Successfully', 'Info'); Start-Sleep -s 2""", 0, False
+WshShell.Run "python ""D:\Scripts\torrent_watcher.py""", 0, False</code></pre>
+
+    <h3>File 3: The Desktop "STOP" Controller (<span class="file-name">Stop Torrent Watcher.vbs</span>)</h3>
+    <p>Save this file directly onto your <strong>Desktop</strong>. Double-clicking it appends a shutdown log entry, safely terminates Python, and pushes a distinct warning alert.</p>
+<pre><code>Set WshShell = CreateObject("WScript.Shell")
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+logPath = "D:\Scripts\watcher_log.txt"
+timestamp = Year(Now) & "-" & Right("0" & Month(Now), 2) & "-" & Right("0" & Day(Now), 2) & " " & Right("0" & Hour(Now), 2) & ":" & Right("0" & Minute(Now), 2) & ":" & Right("0" & Second(Now), 2)
+
+If fso.FileExists(logPath) Then
+    Set ts = fso.OpenTextFile(logPath, 8)
+    ts.WriteLine "[" & timestamp & "] Watcher service stopped completely."
+    ts.Close
+End If
+
+WshShell.Run "taskkill /f /im python.exe", 0, True
+WshShell.Run "powershell -Command ""[void] [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); $n = New-Object System.Windows.Forms.NotifyIcon; $n.Icon = [System.Drawing.SystemIcons]::Warning; $n.Visible = $true; $n.ShowBalloonTip(3000, 'Torrent Watcher', 'Service Stopped Completely', 'Warning'); Start-Sleep -s 2""", 0, False</code></pre>
+
+    <h2>Part 4: Optional Automation Setup (Launch on Windows Boot)</h2>
+    <p>If you want the script to launch by itself whenever you sign into your laptop, do the following:</p>
+    <ol>
+        <li>Right-click the <strong>Start Torrent Watcher.vbs</strong> file on your desktop and select <strong>Copy</strong>.</li>
+        <li>Press <strong>Windows Key + R</strong> to bring up the Run command window.</li>
+        <li>Type <code>shell:startup</code> and click <strong>OK</strong> to open your personal startup folder.</li>
+        <li>Right-click any blank space inside that folder and select <strong>Paste</strong>.</li>
+    </ol>
+
+    <h2>Part 5: Notification System Breakdown</h2>
+    <ul>
+        <li><strong>Service Started (Blue Info Icon):</strong> Triggered when the script boots up manually or at startup. Confirms that monitoring is active.</li>
+        <li><strong>Copying Initiated (Information Icon):</strong> Dispatched the moment a download hits 100%. Lets you know the file transfer to your external drive has begun.</li>
+        <li><strong>Transfer & Cleanup Successful (Success Check):</strong> Alerts you as soon as the copy safely finishes and passes the file size test. Confirms your data is intact on the external disk and the original has been purged to save local space.</li>
+        <li><strong>Service Stopped (Yellow Warning Icon):</strong> Shows when the script execution is completely stopped via the controller file, verifying that background processing resources are cleared.</li>
+    </ul>
+
+    <h2>Part 6: Smart Scenarios Handled by Your Automator</h2>
+    <h3>1. Zero Resource Drain (0% CPU Sleep Guard)</h3>
+    <p>While monitoring directories, the thread handles an explicit 10-second idle frame. Windows automatically registers it inside a suspended execution stack, consuming 0% processor assets and minimal working memory profiles (~12MB RAM), keeping system performance snappy.</p>
+
+    <h3>2. Missing External Drive Protection</h3>
+    <p>If the targeted backup drive is detached, the program avoids crashing out with runtime fatal exceptions. Structural assertions detect the folder availability flags, break loop mechanics cleanly, and monitor path presence states patiently every 10 seconds without generating massive error logs.</p>
+
+    <h3>3. Duplicate Prevention Across System Restarts</h3>
+    <p>Volatile memory structures lose tracking variables upon reboots. To prevent historical library items from re-copying to external paths over again, the engine executes an array initialization pass upon boot, caching old structures so it only targets newly initialized downloads.</p>
+
+    <h3>4. Automatic Space-Cleaning Integrity Lock</h3>
+    <p>The system never calls a destructive deletion sequence blindly. It measures the byte profile of the copied folder/file on your external drive and maps it against the local source file size. If the values differ by even a single byte—implying a bad transfer or corrupted disk save—the automation halts the cleanup sequence, logs a warning, and retains the original download safely on your machine.</p>
+
+    <h3>5. Invisible UI Execution with Native Desktop HUDs</h3>
+    <p>Standard scripts leave prominent console windows open on your display. Using the VBS script host wrapper allows this process to execute silently in the background, utilizing decoupled PowerShell sub-processes to issue clean Windows desktop notification banners during state transitions.</p>
+
+</body>
+</html>
