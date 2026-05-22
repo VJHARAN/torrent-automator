@@ -46,8 +46,6 @@ For step-by-step setup walkthroughs—including configuring Windows Boot automat
 
 👉 **[Click Here to View the Interactive HTML Setup Guide](https://yourusername.github.io/torrent-automator/)**
 
-*(Note: Replace the link above with your actual live GitHub Pages URL once deployed!)*
-
 ---
 
 ## 📄 License
