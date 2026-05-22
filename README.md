@@ -1,6 +1,6 @@
 # Torrent Automator 🚀
 
-A lightweight, production-grade background directory monitor for Windows that automates the migration of completed torrents from your local disk (`D:`) to external storage (`E:`). 
+A lightweight, production-grade background directory monitor for Windows that automates the copying of completed torrents from your local disk (`D:`) to external storage (`E:`). 
 
 This script architecture functions as a stealth system worker—running completely invisibly with zero CPU overhead, while pushing native desktop notification banners during file transfers.
 
