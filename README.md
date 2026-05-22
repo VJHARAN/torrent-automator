@@ -44,7 +44,7 @@ The pipeline divides responsibilities across 3 core files deployed in your local
 
 For step-by-step setup walkthroughs—including configuring Windows Boot automation paths and environmental dependencies—view our interactive documentation.
 
-👉 **[Click Here to View the Interactive HTML Setup Guide](https://yourusername.github.io/torrent-automator/)**
+👉 **[Click Here to View the Interactive HTML Setup Guide](https://vjharan.github.io/torrent-automator/)**
 
 ---
 
