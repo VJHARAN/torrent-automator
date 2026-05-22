@@ -4,6 +4,19 @@ A lightweight, production-grade background directory monitor for Windows that au
 
 This script architecture functions as a stealth system worker—running completely invisibly with zero CPU overhead, while pushing native desktop notification banners during file transfers.
 
+===
+
+## 🛠️ Technologies Used
+
+The architecture of this project is explicitly built using core system languages and scripting environments native to Windows to eliminate heavy external dependencies:
+
+*   *Python 3.x:* Handles the core background monitoring engine, directory auditing, conditional loop checkpoints, path validation hooks, and robust multi-threaded file operations.
+*   *VBScript (Visual Basic Script):* Acts as the execution layer wrapper. It interacts directly with the Windows Script Host to launch the Python interpreter with a 0 window flag, masking the active command shell from view.
+*   *Windows PowerShell:* Used as a lightweight, inline graphics engine. It pulls down the native .NET framework libraries (System.Windows.Forms) to deliver rich desktop notification banners without slowing down file operations.
+*   *HTML5 / CSS3:* Provides a clean, styled, portable setup blueprint readable inside any web browser on any device.
+
+===
+
 ## 🌟 Key Features
 
 *   **Stealth Background Execution:** Utilizing native `.vbs` wrappers, the Python runtime environment runs completely hidden without leaving messy console windows active on your desktop.
